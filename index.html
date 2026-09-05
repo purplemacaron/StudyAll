@@ -51,13 +51,13 @@ svg.lucide{width:18px;height:18px;flex:none}
   width:236px;flex:none;border-right:1px solid var(--line);
   display:flex;flex-direction:column;padding:20px 14px;gap:4px;background:var(--bg);
 }
-.logo{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
-.logo-mark{
-  width:34px;height:34px;background:var(--inv-bg);color:var(--inv-fg);border-radius:9px;
-  display:grid;place-items:center;font-weight:900;font-size:18px;letter-spacing:-.5px;
+/* 로고: 사각형 없는 순수 타이포 워드마크 */
+.logo{padding:4px 8px 20px;display:flex;align-items:baseline;gap:2px}
+.logo-word{
+  font-weight:900;font-size:27px;letter-spacing:-1.3px;line-height:1;color:var(--fg);
 }
-.logo-word{font-weight:800;font-size:19px;letter-spacing:-.6px}
-.logo-word em{font-style:normal;color:var(--muted);font-weight:500}
+.logo-word em{font-style:normal;font-weight:500;color:var(--muted)}
+.logo-word i{display:inline-block;width:6px;height:6px;background:var(--fg);border-radius:50%;margin-left:3px;transform:translateY(-2px)}
 .nav-item{
   display:flex;align-items:center;gap:11px;width:100%;padding:9px 12px;border-radius:var(--r-btn);
   color:var(--muted);font-weight:600;font-size:14.5px;transition:all .15s;text-align:left;
@@ -95,7 +95,6 @@ svg.lucide{width:18px;height:18px;flex:none}
 #page{flex:1;overflow-y:auto;overflow-x:hidden}
 .page-inner{max-width:1060px;margin:0 auto;padding:26px 24px 60px}
 #page.no-scroll{overflow:hidden;display:flex;flex-direction:column}
-/* 채팅 등 풀높이 화면: 데스크톱/모바일 공통으로 적용 (이전 버그 수정) */
 #page.no-scroll .page-inner{
   display:flex;flex-direction:column;flex:1;min-height:0;
   max-width:1060px;padding:0 24px;
@@ -432,8 +431,7 @@ svg.lucide{width:18px;height:18px;flex:none}
 <div id="app">
   <aside id="sidebar">
     <div class="logo">
-      <div class="logo-mark">S</div>
-      <div class="logo-word">Study<em>All</em></div>
+      <div class="logo-word">Study<em>All</em><i></i></div>
     </div>
     <nav id="sideNav" class="row-list"></nav>
     <div class="nav-spacer"></div>
@@ -468,13 +466,12 @@ svg.lucide{width:18px;height:18px;flex:none}
 
 <script>
 /* =========================================================
-   StudyAll — 단일 파일 학습 워크스페이스 (수정판)
+   StudyAll — 단일 파일 학습 워크스페이스
    데이터는 전부 localStorage에 저장됩니다.
    ========================================================= */
 
 /* ---------- 안전 헬퍼: 아이콘/저장/오류 ---------- */
 function icons(){ try{ window.lucide && window.lucide.createIcons(); }catch(e){} }
-// 아이콘 라이브러리가 늦게/실패해도 앱이 뜨도록 재시도
 (function waitIcons(){ let n=0; const t=setInterval(()=>{ if(window.lucide){ icons(); clearInterval(t); } else if(++n>60) clearInterval(t); },300); })();
 window.addEventListener('load', icons);
 
@@ -530,11 +527,18 @@ const QUOTES = [
   ['오늘 흘린 땀 한 방울이, 내일의 나를 지켜준다.','StudyAll'],
   ['잊어버릴 것을 대비해 기록하고, 기억할 것을 반복하라.','학습의 원칙'],
 ];
+/* 모델 프리셋 — 자동완성 제안용. 어떤 모델 ID든 직접 입력 가능 */
 const GROQ_MODELS = [
   ['llama-3.3-70b-versatile','Llama 3.3 70B — 고성능 범용'],
   ['llama-3.1-8b-instant','Llama 3.1 8B — 초고속'],
   ['openai/gpt-oss-120b','GPT-OSS 120B — 추론 특화'],
   ['openai/gpt-oss-20b','GPT-OSS 20B — 가볍고 빠름'],
+  ['moonshotai/kimi-k2-instruct','Kimi K2 — 장문 · 에이전트'],
+  ['meta-llama/llama-4-maverick-17b-128e-instruct','Llama 4 Maverick'],
+  ['meta-llama/llama-4-scout-17b-16e-instruct','Llama 4 Scout'],
+  ['qwen/qwen3-32b','Qwen 3 32B'],
+  ['deepseek-r1-distill-llama-70b','DeepSeek R1 Distill 70B'],
+  ['gemma2-9b-it','Gemma 2 9B'],
 ];
 
 /* ---------- 유틸 ---------- */
@@ -669,7 +673,7 @@ function demoChatReply(text){
   if(/안녕|하이|hello/i.test(text)) return '안녕하세요! StudyAll AI 튜터예요. 지금은 **오프라인 데모 모드**라 미리 준비된 답변만 드릴 수 있어요.\n\n설정에서 Groq API 키를 입력하면 어떤 질문이든 실시간으로 답해드립니다. 무료 키는 console.groq.com에서 발급할 수 있어요.';
   if(/퀴즈|문제|시험/.test(text)) return '좋아요, 문제 하나 볼게요!\n\n**Q. 다음 중 효율적인 암기 전략은?**\n1. 밤새 한 번에 몰아 읽기\n2. 간격을 두고 여러 번 복습하기\n3. 읽기만 하고 확인하지 않기\n\n정답은 2번! **간격 반복(spaced repetition)**이 장기 기억에 가장 효과적입니다. AI 도구 탭에서 퀴즈 자동 생성도 활용해 보세요.';
   if(/포모도로|집중|타이머/.test(text)) return '포모도로 기법은 **25분 집중 + 5분 휴식**을 반복하는 방식이에요. 포모도로 탭에서 바로 시작할 수 있고, 완료한 세션은 자동으로 통계에 기록됩니다. 오늘 목표는 4사이클 어때요?';
-  return `좋은 질문이네요 — "${text.length>30?text.slice(0,30)+'…':text}"에 대해 깊이 답하고 싶지만, 지금은 **오프라인 데모 모드**라 실제 AI 추론이 불가능합니다.\n\n우측 상단 **설정 → AI 연결**에서 무료 Groq API 키를 입력하면 이 질문에 즉시 답해드릴 수 있어요. 발급은 console.groq.com에서 1분이면 끝납니다.`;
+  return `좋은 질문이네요 — "${text.length>30?text.slice(0,30)+'…':text}"에 대해 깊이 답하고 싶지만, 지금은 **오프라인 데모 모드**라 실제 AI 추론이 불가능합니다.\n\n**설정 → AI 연결**에서 무료 Groq API 키를 입력하면 이 질문에 즉시 답해드릴 수 있어요. 발급은 console.groq.com에서 1분이면 끝납니다.`;
 }
 function demoTool(kind, topic){
   topic = topic || '학습 주제';
@@ -756,7 +760,6 @@ function route(){
   let id = (location.hash||'#/home').replace('#/','')||'home';
   if(!PAGES[id]) id='home';
   currentRoute=id;
-  // 화면 전환 시 열려있던 오버레이/모달 정리
   $('#studyOverlay').classList.remove('open');
   closeModal();
   $$('#sideNav .nav-item, #sideSettings, #tabbar button[data-route], #sheetGrid button')
@@ -888,7 +891,7 @@ const page_tutor = (root)=>{
   root.innerHTML = `
     <div class="chat-layout">
       <div class="chat-toolbar">
-        <span class="chip">${state.apiKey? 'Groq 연결됨 · '+esc(state.model) : '오프라인 데모 모드'}</span>
+        <span class="chip">${state.apiKey? 'Groq · '+esc(state.model) : '오프라인 데모 모드'}</span>
         <button class="btn btn-ghost btn-sm" id="clrChat"><i data-lucide="trash-2"></i>대화 지우기</button>
       </div>
       ${ !state.apiKey ? `<div class="notice" style="margin-bottom:10px"><i data-lucide="key-round"></i>
@@ -948,7 +951,7 @@ const page_tutor = (root)=>{
       if(state.chat.length>60) state.chat = state.chat.slice(-60);
       save();
     }catch(e){
-      bodyEl.innerHTML = `<strong>응답을 받지 못했어요.</strong><br>${esc(e.message)}<br><br>설정에서 API 키와 모델을 확인해 주세요.`;
+      bodyEl.innerHTML = `<strong>응답을 받지 못했어요.</strong><br>${esc(e.message)}<br><br>설정에서 API 키와 모델 ID를 확인해 주세요.`;
     }
     scroll.scrollTop = scroll.scrollHeight;
     chatBusy=false; $('#chatSend').style.opacity=1; icons();
@@ -1018,7 +1021,7 @@ const page_tools = (root)=>{
       try{
         res = await groqChat([{role:'user', content:prompts[toolTab]}], {json:true});
       }catch(e1){
-        // JSON 모드를 지원하지 않는 모델 폴백: 일반 요청 후 JSON만 추출
+        // JSON 모드 미지원 모델 폴백: 일반 요청 후 JSON만 추출
         res = await groqChat([{role:'user', content:prompts[toolTab]}], {});
       }
       data = extractJSON(res);
@@ -1402,7 +1405,7 @@ function openQuizBuilder(){
 }
 
 /* =========================================================
-   페이지 6 — 포모도로 (수정: 항상 설정 시간부터 표시)
+   페이지 6 — 포모도로
    ========================================================= */
 const pomo = { mode:'work', running:false, endAt:0, left:0 };
 function pomoTotal(){ return (pomo.mode==='work'? state.pomo.work : state.pomo.rest) * 60; }
@@ -1413,7 +1416,7 @@ function pomoShown(){
 function pomoReset(){ pomo.running=false; pomo.left=pomoTotal(); updatePomoUI(); }
 function pomoToggle(){
   if(pomo.running){
-    pomo.left = Math.max(0, Math.round((pomo.endAt - Date.now())/1000)); // 남은 시간 저장
+    pomo.left = Math.max(0, Math.round((pomo.endAt - Date.now())/1000));
     pomo.running=false;
   }else{
     if(!(pomo.left>0)) pomo.left = pomoTotal();
@@ -1763,10 +1766,16 @@ const page_settings = (root)=>{
       <div class="field"><label>Groq API Key</label>
         <input class="input" id="setKey" type="password" placeholder="gsk_..." value="${esc(state.apiKey)}">
       </div>
-      <div class="field"><label>모델</label>
-        <select class="select" id="setModel">
-          ${GROQ_MODELS.map(([v,l])=>`<option value="${v}" ${v===state.model?'selected':''}>${l}</option>`).join('')}
-        </select></div>
+      <div class="field"><label>모델 — 프리셋 선택 또는 직접 입력</label>
+        <input class="input" id="setModel" list="modelList" value="${esc(state.model)}"
+          placeholder="모델 ID 입력 (예: llama-3.3-70b-versatile)" autocomplete="off" spellcheck="false">
+        <datalist id="modelList">
+          ${GROQ_MODELS.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join('')}
+        </datalist>
+        <p class="muted-t" style="font-size:12px;line-height:1.6">
+          console.groq.com/models에 있는 모델 ID는 무엇이든 입력할 수 있어요.<br>
+          목록에서 골라도 되고, 신규 모델이 나오면 ID만 직접 적으면 됩니다. 비워두면 기본 모델로 복구됩니다.</p>
+      </div>
       <div style="display:flex;gap:9px;flex-wrap:wrap">
         <button class="btn btn-solid btn-sm" id="saveKey"><i data-lucide="check"></i>저장</button>
         <button class="btn btn-ghost btn-sm" id="testKey"><i data-lucide="zap"></i>연결 테스트</button>
@@ -1806,12 +1815,20 @@ const page_settings = (root)=>{
     </div>
     <p class="muted-t" style="font-size:12px;margin-top:18px;text-align:center">StudyAll · 모든 데이터는 이 기기에만 저장됩니다</p>`;
 
+  /* 모델 입력값 정리: 공백 제거, 비었으면 기본값 복구 */
+  const readModel = ()=>{
+    const v = $('#setModel').value.trim().replace(/\s+/g,'');
+    return v || DEFAULTS.model;
+  };
   $('#saveKey').onclick = ()=>{
-    state.apiKey = $('#setKey').value.trim(); state.model = $('#setModel').value; save();
-    toast(state.apiKey? 'AI가 연결됐어요!' : '키가 비워졌어요 — 데모 모드로 동작', 'key-round'); route();
+    state.apiKey = $('#setKey').value.trim();
+    state.model = readModel();
+    save();
+    toast(state.apiKey? 'AI가 연결됐어요!' : '키가 비워졌어요 — 데모 모드로 동작', 'key-round');
+    route();
   };
   $('#testKey').onclick = async ()=>{
-    state.apiKey = $('#setKey').value.trim(); state.model = $('#setModel').value; save();
+    state.apiKey = $('#setKey').value.trim(); state.model = readModel(); save();
     if(!state.apiKey) return toast('키를 먼저 입력해 주세요','alert-triangle');
     toast('테스트 중…','zap');
     try{ await groqChat([{role:'user', content:'"연결 성공"이라고만 답해줘.'}], {temperature:0});
@@ -1889,7 +1906,7 @@ const PAGES = { home:page_home, tutor:page_tutor, tools:page_tools, cards:page_c
    ========================================================= */
 buildShell();
 setTheme(state.theme);
-pomoReset();            // 수정: 타이머가 항상 설정 시간(기본 25:00)에서 시작
+pomoReset();
 if(!location.hash) location.hash = '#/home';
 route();
 </script>
